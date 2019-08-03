@@ -26,6 +26,8 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         self.projected_data = pd.DataFrame(columns=['datetime', 'value'])
         self.db = 'sqlite:///database.db'
 
+        self.five_minute_data.set_index(pd.DatetimeIndex(self.five_minute_data['datetime']))
+
     #########################################################
     #  Method name: return_target_url
     #  Parameters: self
@@ -146,7 +148,12 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
     #########################################################
     def five_minute_to_sql(self):
         engine = create_engine(self.db, echo=False)
-        self.five_minute_data.to_sql('five_minute_data', con=engine, if_exists='append')
+        try:
+            dfObj = pd.read_sql('five_minute_data',con=engine,index_col='datetime')
+            dfObj = dfObj.merge(self.five_minute_data, how='outer').dropna()
+            dfObj.to_sql('five_minute_data', con=engine, if_exists='append')
+        except:
+            self.five_minute_data.to_sql('five_minute_data', con=engine, if_exists='replace')
 
     #########################################################
     #  Method name: actual_to_sql
@@ -156,7 +163,14 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
     #########################################################
     def actual_to_sql(self):
         engine = create_engine(self.db, echo=False)
-        self.actual_data.to_sql('actual', con=engine, if_exists='append')
+        try:
+            dfObj = pd.read_sql('actual', con=engine, index_col='datetime')
+            dfObj = dfObj.merge(self.actual_data, how='outer').dropna()
+            dfObj.to_sql('actual', con=engine, if_exists='append')
+        except:
+            self.actual_data.to_sql('actual', con=engine, if_exists='replace')
+
+
 
     #########################################################
     #  Method name: projected_to_sql
@@ -185,23 +199,30 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
 
             self.start_date = dt.datetime.strptime(root.find('StartDate').text, "%Y-%m-%dT%H:%M:%S")
             self.created_at = dt.datetime.strptime(root.find('CreatedAt').text, "%Y-%m-%dT%H:%M:%S")
-            for dataset in root.iter('DataSet'):
-                if dataset.attrib.get("Series") in '5_Minute':
-                    self.parse_five_minuter_data(dataset)
-                elif dataset.attrib.get("Series") in 'Actual':
-                    self.parse_actual_data(dataset)
-                elif dataset.attrib.get("Series") in 'Projected':
-                    self.parse_projected_data(dataset)
+            try:
+                engine = create_engine(self.db, echo=False)
+                dfObj = pd.DataFrame(columns=['created_at', 'start_date', 'downloaded_at'])
+                dfObj = dfObj.append({'created_at': self.created_at, 'start_date': self.start_date,
+                                      'downloaded_at': datetime.datetime.now()}, ignore_index=True)
+                dfObj.to_sql('independent_electrical_system_operator_statistics', con=engine)
+                for dataset in root.iter('DataSet'):
+                    if dataset.attrib.get("Series") in '5_Minute':
+                        self.parse_five_minuter_data(dataset)
+                    elif dataset.attrib.get("Series") in 'Actual':
+                        self.parse_actual_data(dataset)
+                    elif dataset.attrib.get("Series") in 'Projected':
+                        self.parse_projected_data(dataset)
+                print('New Data Added')
+            except:
+                print('Already Exists')
         finally:
             temp.close()
         return None
 
 
-
+j = 0
 Demand_data = RetrieveIndependentElectricalSystemOperatorDemandData()
-while True:
-    Demand_data.download_data_set()
-    Demand_data.five_minute_to_sql()
-    Demand_data.actual_to_sql()
-    Demand_data.projected_to_sql()
-    sleep(5*60)
+Demand_data.download_data_set()
+Demand_data.five_minute_to_sql()
+Demand_data.actual_to_sql()
+Demand_data.projected_to_sql()
