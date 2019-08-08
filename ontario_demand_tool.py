@@ -204,7 +204,7 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
                 dfObj = pd.DataFrame(columns=['created_at', 'start_date', 'downloaded_at'])
                 dfObj = dfObj.append({'created_at': self.created_at, 'start_date': self.start_date,
                                       'downloaded_at': datetime.datetime.now()}, ignore_index=True)
-                dfObj.to_sql('independent_electrical_system_operator_statistics', con=engine)
+                dfObj.to_sql('independent_electrical_system_operator_statistics', con=engine, if_exists='append')
                 for dataset in root.iter('DataSet'):
                     if dataset.attrib.get("Series") in '5_Minute':
                         self.parse_five_minuter_data(dataset)
@@ -212,9 +212,9 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
                         self.parse_actual_data(dataset)
                     elif dataset.attrib.get("Series") in 'Projected':
                         self.parse_projected_data(dataset)
-                print('New Data Added')
+                print('New Data Added @' + str(self.return_created_at()))
             except:
-                print('Already Exists')
+                print('Already Exists @' + str(self.return_created_at()))
         finally:
             temp.close()
         return None
