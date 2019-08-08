@@ -220,7 +220,7 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         return None
 
 
-j = 0
+
 Demand_data = RetrieveIndependentElectricalSystemOperatorDemandData()
 Demand_data.download_data_set()
 Demand_data.five_minute_to_sql()
