@@ -3,7 +3,6 @@ import pandas as pd
 import xml.etree.ElementTree as xml
 
 from sqlalchemy import create_engine
-from time import sleep
 
 import tempfile
 import requests
@@ -25,7 +24,7 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         self.actual_data = pd.DataFrame(columns=['datetime', 'value'])
         self.projected_data = pd.DataFrame(columns=['datetime', 'value'])
         self.db = 'sqlite:///database.db'
-
+        #self.db = 'postgresql://ieso_scrapper:111horton@localhost:5432/ieso'
         self.five_minute_data.set_index(pd.DatetimeIndex(self.five_minute_data['datetime']))
 
     #########################################################
@@ -150,8 +149,9 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         engine = create_engine(self.db, echo=False)
         try:
             dfObj = pd.read_sql('five_minute_data',con=engine,index_col='datetime')
-            dfObj = dfObj.merge(self.five_minute_data, how='outer').dropna()
-            dfObj.to_sql('five_minute_data', con=engine, if_exists='append')
+            #dfObj = dfObj.merge(self.five_minute_data, how='outer').dropna()
+            df_suffix = pd.merge(dfObj, self.actual_data, how='outer').dropna()
+            df_suffix.to_sql('five_minute_data', con=engine, if_exists='append')
         except:
             self.five_minute_data.to_sql('five_minute_data', con=engine, if_exists='replace')
 
@@ -165,8 +165,9 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         engine = create_engine(self.db, echo=False)
         try:
             dfObj = pd.read_sql('actual', con=engine, index_col='datetime')
-            dfObj = dfObj.merge(self.actual_data, how='outer').dropna()
-            dfObj.to_sql('actual', con=engine, if_exists='append')
+            #dfObj = dfObj.merge(self.actual_data, how='outer').dropna()
+            df_suffix = pd.merge(dfObj, self.actual_data, how='outer').dropna()
+            df_suffix.to_sql('actual', con=engine, if_exists='append')
         except:
             self.actual_data.to_sql('actual', con=engine, if_exists='replace')
 
@@ -226,6 +227,3 @@ Demand_data.download_data_set()
 Demand_data.five_minute_to_sql()
 Demand_data.actual_to_sql()
 Demand_data.projected_to_sql()
-f= open("lastRun.txt","w+")
-f.write("%s\r\n" % str(dt.datetime.now()))
-f.close()
