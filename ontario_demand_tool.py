@@ -144,8 +144,8 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
     #  Parameters:
     #  Return:
     #  Functionality:
-    def handel_actual(self, pasrsed_actual_data_frames):
     #########################################################
+    def handel_actual(self, pasrsed_actual_data_frames):
         engine = create_engine(self.db, echo=False)
         try:
             sql_actual_data_frame = pd.read_sql('actual', con=engine, index_col='datetime')
@@ -154,7 +154,6 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
             dfObj = pasrsed_actual_data_frames
         self.actual_data = dfObj
         self.actual_data.to_sql('actual', con=engine, if_exists='append')
-            print("NO SQL")
             
     #########################################################
     #  Method name: parse_actual_data
