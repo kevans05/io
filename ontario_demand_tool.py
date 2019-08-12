@@ -92,22 +92,6 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         return self.projected_data
 
     #########################################################
-    #  Method name: parse_five_minuter_data
-    #  Parameters:
-    #  Return:
-    #  Functionality:
-    #########################################################
-    def parse_five_minuter_data(self, dataset):
-        datetime_object = self.start_date
-        dfObj = pd.DataFrame(columns=['datetime', 'value'])
-        for x in dataset:
-            for y in x:
-                dfObj = dfObj.append({'datetime': datetime_object, 'value': y.text}, ignore_index=True)
-                datetime_object = datetime_object + datetime.timedelta(minutes=5)
-        dfObj.set_index(pd.DatetimeIndex(dfObj['datetime']))
-        self.five_minute_data = self.five_minute_data.merge(dfObj, how='outer').dropna()
-
-    #########################################################
     #  Method name: parse_projected_data
     #  Parameters:
     #  Return:
@@ -129,16 +113,32 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
     #  Return:
     #  Functionality:
     #########################################################
-    def five_minute_to_sql(self):
+    def handel_five_minute(self, pasrsed_five_minute_data_frames):
         engine = create_engine(self.db, echo=False)
         try:
-            dfObj = pd.read_sql('five_minute_data',con=engine,index_col='datetime')
-            #dfObj = dfObj.merge(self.five_minute_data, how='outer').dropna()
-            df_suffix = pd.merge(dfObj, self.actual_data, how='outer').dropna()
-            df_suffix.to_sql('five_minute_data', con=engine, if_exists='append')
+            sql_five_minute_data_frame = pd.read_sql('actual', con=engine, index_col='datetime')
+            dfObj = pd.merge(pasrsed_five_minute_data_frames, sql_five_minute_data_frame, on='datetime', how='outer')
         except:
-            self.five_minute_data.to_sql('five_minute_data', con=engine, if_exists='replace')
+            dfObj = pasrsed_actual_data_frames
+        self.five_minute_data = dfObj
+        self.five_minute_data.to_sql('five_minute_data', con=engine, if_exists='append')
 
+    #########################################################
+    #  Method name: parse_five_minuter_data
+    #  Parameters:
+    #  Return:
+    #  Functionality:
+    #########################################################
+    def parse_five_minute_data(self, dataset):
+        datetime_object = self.start_date
+        dfObj = pd.DataFrame(columns=['datetime', 'value'])
+        for x in dataset:
+            for y in x:
+                dfObj = dfObj.append({'datetime': datetime_object, 'value': y.text}, ignore_index=True)
+                datetime_object = datetime_object + datetime.timedelta(minutes=5)
+        dfObj.set_index(pd.DatetimeIndex(dfObj['datetime']))
+        def handel_actual(self, pasrsed_actual_data_frames):
+    
     #########################################################
     #  Method name: actual_to_sql
     #  Parameters:
@@ -207,8 +207,7 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
                 dfObj.to_sql('independent_electrical_system_operator_statistics', con=engine, if_exists='append')
                 for dataset in root.iter('DataSet'):
                     if dataset.attrib.get("Series") in '5_Minute':
-                        self.parse_five_minuter_data(dataset)
-                        
+                        self.handel_five_minute(self.parse_five_minuter_data(dataset))
                     elif dataset.attrib.get("Series") in 'Actual':
                         #self.parse_actual_data(dataset)
                         self.handel_actual(self.parse_actual_data(dataset))
