@@ -115,11 +115,13 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
     #########################################################
     def handel_five_minute(self, pasrsed_five_minute_data_frames):
         engine = create_engine(self.db, echo=False)
+        
         try:
+            
             sql_five_minute_data_frame = pd.read_sql('actual', con=engine, index_col='datetime')
             dfObj = pd.merge(pasrsed_five_minute_data_frames, sql_five_minute_data_frame, on='datetime', how='outer')
         except:
-            dfObj = pasrsed_actual_data_frames
+            dfObj = pasrsed_five_minute_data_frames
         self.five_minute_data = dfObj
         self.five_minute_data.to_sql('five_minute_data', con=engine, if_exists='append')
 
@@ -137,8 +139,8 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
                 dfObj = dfObj.append({'datetime': datetime_object, 'value': y.text}, ignore_index=True)
                 datetime_object = datetime_object + datetime.timedelta(minutes=5)
         dfObj.set_index(pd.DatetimeIndex(dfObj['datetime']))
-        def handel_actual(self, pasrsed_actual_data_frames):
-    
+        return dfObj.dropna()
+ 
     #########################################################
     #  Method name: actual_to_sql
     #  Parameters:
@@ -153,8 +155,8 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         except:
             dfObj = pasrsed_actual_data_frames
         self.actual_data = dfObj
-        self.actual_data.to_sql('actual', con=engine, if_exists='append')
-            
+        self.actual_data.to_sql('sts', con=engine, if_exists='append')
+
     #########################################################
     #  Method name: parse_actual_data
     #  Parameters:
@@ -196,7 +198,6 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
                 file.write(response.content)
             tree = xml.parse(temp.name)
             root = tree.getroot()
-
             self.start_date = dt.datetime.strptime(root.find('StartDate').text, "%Y-%m-%dT%H:%M:%S")
             self.created_at = dt.datetime.strptime(root.find('CreatedAt').text, "%Y-%m-%dT%H:%M:%S")
             try:
@@ -207,9 +208,9 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
                 dfObj.to_sql('independent_electrical_system_operator_statistics', con=engine, if_exists='append')
                 for dataset in root.iter('DataSet'):
                     if dataset.attrib.get("Series") in '5_Minute':
-                        self.handel_five_minute(self.parse_five_minuter_data(dataset))
+                        j = self.parse_five_minute_data(dataset)
+                        self.handel_five_minute(j)
                     elif dataset.attrib.get("Series") in 'Actual':
-                        #self.parse_actual_data(dataset)
                         self.handel_actual(self.parse_actual_data(dataset))
                     elif dataset.attrib.get("Series") in 'Projected':
                         self.parse_projected_data(dataset)
