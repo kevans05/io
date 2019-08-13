@@ -23,8 +23,8 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         self.five_minute_data = pd.DataFrame(columns=['datetime', 'value'])
         self.actual_data = pd.DataFrame(columns=['datetime', 'value'])
         self.projected_data = pd.DataFrame(columns=['datetime', 'value'])
-        self.db = 'sqlite:///database.db'
-        #self.db = 'postgresql://ieso_scrapper:111horton@localhost:5432/ieso'
+        #self.db = 'sqlite:///database.db'
+        self.db = 'postgresql://ieso_scraper:111horton@localhost:5432/ieso'
         self.five_minute_data.set_index(pd.DatetimeIndex(self.five_minute_data['datetime']))
 
     #########################################################
@@ -118,7 +118,7 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         
         try:
             
-            sql_five_minute_data_frame = pd.read_sql('actual', con=engine, index_col='datetime')
+            sql_five_minute_data_frame = pd.read_sql('five_minute_data', con=engine, index_col='datetime')
             dfObj = pd.merge(pasrsed_five_minute_data_frames, sql_five_minute_data_frame, on='datetime', how='outer')
         except:
             dfObj = pasrsed_five_minute_data_frames
@@ -155,7 +155,7 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         except:
             dfObj = pasrsed_actual_data_frames
         self.actual_data = dfObj
-        self.actual_data.to_sql('sts', con=engine, if_exists='append')
+        self.actual_data.to_sql('actual', con=engine, if_exists='append')
 
     #########################################################
     #  Method name: parse_actual_data
