@@ -1,10 +1,13 @@
+import pandas as pd
+
 from datetime import datetime
 from urllib import request
-from os import remove
 from dateutil import rrule
+from ftplib import FTP
 
+import tempfile
 import csv
-
+import requests
 
 #########################################################
 #  Method name: convert_str
@@ -22,8 +25,17 @@ def convert_str(s):
         ret = None
     return ret
 
-
 class canadian_weather:
+    def __init__(self):
+        self.data_set_url_1 = 'http://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID='
+        self.data_set_url_2 = '&Year='
+        self.data_set_url_3 = '&Month='
+        self.data_set_url_4 = '&Day=14&timeframe=1&submit=%20Download+Data'
+
+        self.weather_station_id_url = 'ftp://client_climate@ftp.tor.ec.gc.ca/Pub/Get_More_Data_Plus_de_donnees/Station%20Inventory%20EN.csv'
+
+
+
     #########################################################
     #  Method name: read_one_month_from_gc
     #  Parameters: station = this is the stationID that the
@@ -41,44 +53,38 @@ class canadian_weather:
     #                 specified station at a specific time
     #########################################################
 
-
-    def read_one_month_from_gc(station, dt):
-        url_part_1 = 'http://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID='
-        url_part_2 = '&Year='
-        url_part_3 = '&Month='
-        url_part_4 = '&Day=14&timeframe=1&submit=%20Download+Data'
-
+    def read_one_month_from_gc(self, station, dt):
         tmp_address_part_1 = 'tmp/'
         tmp_address_part_2 = '.csv'
 
-        weather_data_dict = {'Date': datetime(1, 1, 1, 1, 1, 0), 'Temp_C': None,
-                           'DewPointTemp_C': None, 'RelHum': None, 'StnPress_kPa': None, 'Hmdx': None}
-        weather_data_hourly_list = []
+        dfObj = pd.DataFrame(columns=['datetime', 'Temp_C','DewPointTemp_C','RelHum','StnPress_kPa','Hmdx'])
 
-        url = url_part_1 + str(station) + url_part_2 + str(dt.year) + url_part_3 + str(dt.month) + url_part_4
-        tmp_address = tmp_address_part_1 + str(station) + str(dt.year) + str(dt.month) + tmp_address_part_2
-        request.urlretrieve(url, tmp_address)
+        url = self.data_set_url_1 + str(station) + self.data_set_url_2 + str(dt.year) + self.data_set_url_3 + str(dt.month) + self.data_set_url_4
 
-        with open(tmp_address) as weather_file:
-            skip_header = 0
-            while skip_header < 17:
-                next(weather_file)
-                skip_header = skip_header + 1
-            reader = csv.reader(weather_file)
-            for row in reader:
-                hour = int(float(row[4].split(":")[0]))
-                minute = int(float(row[4].split(":")[1]))
-                dt = datetime(int(float(row[1])), int(float(row[2])), int(float(row[3])), hour, minute)
-                weather_data_dict['Date'] = dt
-                if len(row) == 25:
-                    weather_data_dict['Temp_C'] = convert_str(row[6])
-                    weather_data_dict['DewPointTemp_C'] = convert_str(row[8])
-                    weather_data_dict['RelHum'] = convert_str(row[10])
-                    weather_data_dict['StnPress_kPa'] = convert_str(row[18])
-                    weather_data_dict['Hmdx'] = convert_str(row[20])
-                weather_data_hourly_list.append(weather_data_dict.copy())
-        remove(tmp_address)
-        return weather_data_hourly_list
+        temp = tempfile.NamedTemporaryFile()
+
+        try:
+            response = requests.get(url)
+            with open(temp.name, 'wb') as file:
+                file.write(response.content)
+            with open(temp.name) as weather_file:
+                skip_header = 0
+                while skip_header < 17:
+                    next(weather_file)
+                    skip_header = skip_header + 1
+                reader = csv.reader(weather_file)
+                for row in reader:
+                    dt = datetime(int(float(row[1])), int(float(row[2])), int(float(row[3])),
+                                  int(float(row[4].split(":")[0])), int(float(row[4].split(":")[1])))
+                    if len(row) == 24:
+                        if convert_str(row[5]) is not None:
+                            dfObj = dfObj.append({'datetime': dt, 'Temp_C':convert_str(row[5]),
+                                                  'DewPointTemp_C':convert_str(row[7]),'RelHum':convert_str(row[9]),
+                                                  'StnPress_kPa':convert_str(row[17]),'Hmdx':convert_str(row[19])
+                                                  },ignore_index = True)
+        finally:
+            temp.close()
+        return dfObj
 
     #########################################################
     #  Method name: read_multiple_month_from_gc
@@ -103,25 +109,19 @@ class canadian_weather:
     #                 specified station at a specific time
     #########################################################
 
-
-    def read_multiple_month_from_gc(station, dt_start, dt_end=None):
+    def read_multiple_month_from_gc(self, station, dt_start, dt_end=None):
         if dt_end is None:
             dt_end = datetime.now()
         weather_data_hourly_list = []
         for dt in rrule.rrule(rrule.MONTHLY, dtstart=dt_start, until=dt_end):
-            weather_data_hourly_list = weather_data_hourly_list + read_one_month_from_gc(station, dt)
+            weather_data_hourly_list = weather_data_hourly_list + self.read_one_month_from_gc(station, dt)
         return weather_data_hourly_list
 
+def download_ontario_data():
+    ontario_weather = canadian_weather()
+    weather_station = request.urlretrieve(ontario_weather.weather_station_id_url, 'stationInventory.csv')
 
-    #########################################################
-    #  Method name: update_station_list
-    #  Parameters: None
-    #  Return: None
-    #  Functionality: Downloads the Government of Canada's
-    #                   station list
-    #########################################################
+download_ontario_data()
 
-    def update_station_list(self):
-        url = 'ftp://client_climate@ftp.tor.ec.gc.ca/Pub/Get_More_Data_Plus_de_donnees/Station%20Inventory%20EN.csv'
-        request.urlretrieve(url, 'end/stationInventory.csv')
 
+    #print(ontario_weather.read_one_month_from_gc(10999,datetime.now()))

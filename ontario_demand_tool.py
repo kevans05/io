@@ -24,7 +24,7 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         self.actual_data = pd.DataFrame(columns=['datetime', 'value'])
         self.projected_data = pd.DataFrame(columns=['datetime', 'value'])
         self.db = 'sqlite:///database.db'
-        #self.db = 'postgresql://ieso_scrapper:111horton@localhost:5432/ieso'
+        #self.db = 'postgresql://ieso_scraper:111horton@localhost:5432/ieso'
         self.five_minute_data.set_index(pd.DatetimeIndex(self.five_minute_data['datetime']))
 
     #########################################################
