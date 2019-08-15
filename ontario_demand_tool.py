@@ -23,8 +23,8 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         self.five_minute_data = pd.DataFrame(columns=['datetime', 'value'])
         self.actual_data = pd.DataFrame(columns=['datetime', 'value'])
         self.projected_data = pd.DataFrame(columns=['datetime', 'value'])
-        #self.db = 'sqlite:///database.db'
-        self.db = 'postgresql://ieso_scraper:111horton@localhost:5432/ieso'
+        self.db = 'sqlite:///database.db'
+        #self.db = 'postgresql://ieso_scraper:111horton@localhost:5432/ieso'
         self.five_minute_data.set_index(pd.DatetimeIndex(self.five_minute_data['datetime']))
 
     #########################################################
@@ -115,16 +115,13 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
     #########################################################
     def handel_five_minute(self, pasrsed_five_minute_data_frames):
         engine = create_engine(self.db, echo=False)
-        
         try:
-            
             sql_five_minute_data_frame = pd.read_sql('five_minute_data', con=engine, index_col='datetime')
             dfObj = pd.merge(pasrsed_five_minute_data_frames, sql_five_minute_data_frame, on='datetime', how='outer')
         except:
             dfObj = pasrsed_five_minute_data_frames
         self.five_minute_data = dfObj
-        self.five_minute_data.to_sql('five_minute_data', con=engine, if_exists='append')
-
+        dfObj.to_sql('five_minute_data', con=engine, if_exists='replace')
     #########################################################
     #  Method name: parse_five_minuter_data
     #  Parameters:
@@ -155,8 +152,7 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
         except:
             dfObj = pasrsed_actual_data_frames
         self.actual_data = dfObj
-        self.actual_data.to_sql('actual', con=engine, if_exists='append')
-
+        dfObj.to_sql('actual', con=engine, if_exists='replace')
     #########################################################
     #  Method name: parse_actual_data
     #  Parameters:
@@ -211,7 +207,8 @@ class RetrieveIndependentElectricalSystemOperatorDemandData:
                         j = self.parse_five_minute_data(dataset)
                         self.handel_five_minute(j)
                     elif dataset.attrib.get("Series") in 'Actual':
-                        self.handel_actual(self.parse_actual_data(dataset))
+                        j = self.parse_actual_data(dataset)
+                        self.handel_actual(j)
                     elif dataset.attrib.get("Series") in 'Projected':
                         self.parse_projected_data(dataset)
                 print('New Data Added @' + str(self.return_created_at()))
