@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-/usr/local/anaconda/bin/python /home/sk/io/main.py
+/usr/local/anaconda/bin/python /home/ke/io/main.py
