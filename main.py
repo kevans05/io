@@ -24,7 +24,7 @@ if not independent_electrical_system_operator_statistics.empty:
         df_concat = pd.concat([ieso_data.return_five_minute_data().set_index(['datetime']), ieso_sql.return_sql_table('five_minute').set_index(['datetime'])],sort=True)
         ieso_sql.to_sql(df_concat,'five_minute')
         
-        ieso_sql.to_sql(ieso_data.return_projected_data(), 'projected_' + str(ieso_data.return_created_at().timestamp()))
+        ieso_sql.to_sql(ieso_data.return_projected_data().set_index(['datetime']), 'projected_' + str(ieso_data.return_created_at().timestamp()))
 
         print('database exists,data does not exist')
     else:
@@ -34,5 +34,5 @@ else:
                                                                       ieso_data.return_created_at())
     ieso_sql.to_sql(ieso_data.return_actual_data().set_index(['datetime']), 'actual')
     ieso_sql.to_sql(ieso_data.return_five_minute_data().set_index(['datetime']), 'five_minute')
-    ieso_sql.to_sql(ieso_data.return_projected_data(), 'projected_' + str(ieso_data.return_created_at().timestamp()))
+    ieso_sql.to_sql(ieso_data.return_projected_data().set_index(['datetime']), 'projected_' + str(ieso_data.return_created_at().timestamp()))
     print('new database')
