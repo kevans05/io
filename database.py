@@ -27,7 +27,7 @@ class ieso_sql:
         except:
             engine = create_engine(self.db_local, echo=False)
             dfObj.to_sql(table, con=engine, if_exists='replace')
-
+        print(dfObj)
     ########################################################
     #  Method name: to_sql
     #  Parameters: self
