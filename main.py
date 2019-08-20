@@ -18,28 +18,21 @@ if not independent_electrical_system_operator_statistics.empty:
         pd.to_datetime(independent_electrical_system_operator_statistics.created_at)
     if not(independent_electrical_system_operator_statistics.created_at ==
            pd.Timestamp(ieso_data.return_created_at())).any():
-        print('date does not exist')
-        #ieso_sql.to_sql_independent_electrical_system_operator_statistics(ieso_data.return_start_date(),
-        #                                                                  ieso_data.return_created_at())
+        df_concat = pd.concat([ieso_data.return_actual_data().set_index(['datetime']), ieso_sql.return_sql_table('actual').set_index(['datetime'])],sort=True)
+        ieso_sql.to_sql(df_concat,'actual')
 
-        dfObj = pd.concat([ieso_data.return_actual_data(),ieso_sql.return_sql_table('actual')],axis=0, join='outer',
-                          ignore_index=False, keys=None, levels=None, names=None, verify_integrity=False, copy=True)
+        df_concat = pd.concat([ieso_data.return_five_minute_data().set_index(['datetime']), ieso_sql.return_sql_table('five_minute').set_index(['datetime'])],sort=True)
+        ieso_sql.to_sql(df_concat,'five_minute')
+        
+        ieso_sql.to_sql(ieso_data.return_projected_data(), 'projected_' + str(ieso_data.return_created_at().timestamp()))
 
-            #.drop_duplicates(subset ="datetime",
-            #         keep = False, inplace = True)
-
-            #pd.merge(ieso_data.return_actual_data().set_index('datetime'),ieso_sql.return_sql_table('actual').set_index('datetime'))
-        print(ieso_data.return_actual_data())
-        print(ieso_sql.return_sql_table('actual'))
-        print(dfObj)
-        #ieso_sql.to_sql(dfObj, 'actual')
-
+        print('database exists,data does not exist')
     else:
-        print('date exist')
+        print('database exists,data exist')
 else:
     ieso_sql.to_sql_independent_electrical_system_operator_statistics(ieso_data.return_start_date(),
                                                                       ieso_data.return_created_at())
-    ieso_sql.to_sql(ieso_data.return_actual_data(), 'actual')
-    ieso_sql.to_sql(ieso_data.return_five_minute_data(), 'five_minute')
+    ieso_sql.to_sql(ieso_data.return_actual_data().set_index(['datetime']), 'actual')
+    ieso_sql.to_sql(ieso_data.return_five_minute_data().set_index(['datetime']), 'five_minute')
     ieso_sql.to_sql(ieso_data.return_projected_data(), 'projected_' + str(ieso_data.return_created_at().timestamp()))
-
+    print('new database')
