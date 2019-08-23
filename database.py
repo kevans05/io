@@ -11,7 +11,7 @@ class ieso_sql:
     #########################################################
     def __init__(self):
         self.db_local = 'sqlite:///database.db'
-        self.db_remote = 'postgresql://ieso_scraper:111horton@localhost:5432/ieso'
+        self.db_remote = 'postgresql://ieso_scraper:x@localhost:5433/ieso'
 
     ########################################################
     #  Method name: to_sql
