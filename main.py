@@ -3,6 +3,14 @@ import ieso_scraper, database
 import pandas as pd
 import numpy as np
 
+def concat_dataframes(sql_dataframe, live_dataframe):
+    sql_max = max(sql_dataframe['datetime'])
+    mask = (live_dataframe['datetime'] > sql_max)
+    live_dataframe = live_dataframe.loc[mask]
+    df_concat = pd.concat([sql_dataframe.set_index(['datetime']), live_dataframe.set_index(['datetime'])], sort=True)
+    return df_concat
+
+
 #sets up a ieso scraper
 ieso_data = ieso_scraper.scrape_ieso()
 #sets up the sql builder
@@ -18,10 +26,11 @@ if not independent_electrical_system_operator_statistics.empty:
         pd.to_datetime(independent_electrical_system_operator_statistics.created_at)
     if not(independent_electrical_system_operator_statistics.created_at ==
            pd.Timestamp(ieso_data.return_created_at())).any():
-        df_concat = pd.concat([ieso_data.return_actual_data().set_index(['datetime']), ieso_sql.return_sql_table('actual').set_index(['datetime'])],sort=True)
+
+        df_concat = concat_dataframes(ieso_sql.return_sql_table('actual'), ieso_data.return_actual_data())
         ieso_sql.to_sql(df_concat,'actual')
 
-        df_concat = pd.concat([ieso_data.return_five_minute_data().set_index(['datetime']), ieso_sql.return_sql_table('five_minute').set_index(['datetime'])],sort=True)
+        df_concat = concat_dataframes(ieso_sql.return_sql_table('five_minute'), ieso_data.return_five_minute_data())
         ieso_sql.to_sql(df_concat,'five_minute')
         
         ieso_sql.to_sql(ieso_data.return_projected_data().set_index(['datetime']), 'projected_' + str(ieso_data.return_created_at().timestamp()))

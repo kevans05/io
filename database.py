@@ -24,12 +24,9 @@ class ieso_sql:
         try:
             engine = create_engine(self.db_remote, echo=False)
             dfObj.to_sql(table, con=engine, if_exists='replace')
-            print('postgresql')
         except:
             engine = create_engine(self.db_local, echo=False)
             dfObj.to_sql(table, con=engine, if_exists='replace')
-            print('sqlite')
-        print(table)
     ########################################################
     #  Method name: to_sql
     #  Parameters: self
