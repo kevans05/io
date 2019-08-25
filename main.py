@@ -26,6 +26,8 @@ if not independent_electrical_system_operator_statistics.empty:
         pd.to_datetime(independent_electrical_system_operator_statistics.created_at)
     if not(independent_electrical_system_operator_statistics.created_at ==
            pd.Timestamp(ieso_data.return_created_at())).any():
+        ieso_sql.to_sql_independent_electrical_system_operator_statistics(ieso_data.return_start_date(),
+                                                                          ieso_data.return_created_at())
 
         df_concat = concat_dataframes(ieso_sql.return_sql_table('actual'), ieso_data.return_actual_data())
         ieso_sql.to_sql(df_concat,'actual')
