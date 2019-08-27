@@ -47,3 +47,4 @@ else:
     ieso_sql.to_sql(ieso_data.return_five_minute_data().set_index(['datetime']), 'five_minute')
     ieso_sql.to_sql(ieso_data.return_projected_data().set_index(['datetime']), 'projected_' + str(ieso_data.return_created_at().timestamp()))
     print('new database')
+
