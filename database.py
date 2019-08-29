@@ -33,6 +33,7 @@ class ieso_sql:
     #  Return: Nan
     #  Functionality: initial values for the class
     #########################################################
+ 
     def to_sql_independent_electrical_system_operator_statistics(self, start_date, created_at):
         dfObjMaster = pd.DataFrame(columns=['created_at', 'start_date', 'downloaded_at'])
         dfObjMaster = dfObjMaster.append({'created_at': created_at, 'start_date': start_date,
@@ -89,8 +90,18 @@ class weather_sql:
         except:
             engine = create_engine(self.db_local, echo=False)
             dfObj.to_sql(table, con=engine, if_exists='replace')
- 
+    
+    
+    def to_sql_last_download(self, datetime_value):
+        dfObjMaster = pd.DataFrame(columns=['last_download'])
 
+        dfObjMaster = dfObjMaster.append({'last_download': datetime.now()}, ignore_index=True)
+        try:
+            engine = create_engine(self.db_remote, echo=False)
+            dfObjMaster.to_sql('last_download', con=engine, if_exists='append')
+        except:
+            engine = create_engine(self.db_local, echo=False)
+            dfObjMaster.to_sql('last_download', con=engine, if_exists='append')
 
 
     ########################################################
