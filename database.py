@@ -20,7 +20,7 @@ class ieso_sql:
     #  Functionality: initial values for the class
     #########################################################
     def to_sql(self, dfObj, table):
-    
+        print(table)
         try:
             engine = create_engine(self.db_remote, echo=False)
             dfObj.to_sql(table, con=engine, if_exists='replace')
