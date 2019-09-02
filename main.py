@@ -16,14 +16,11 @@ ieso_data = ieso_scraper.scrape_ieso()
 #sets up the sql builder
 ieso_sql = database.ieso_sql()
 
-weather_sql = database.weather_sql()
-
 ieso_data.update_data()
 
 independent_electrical_system_operator_statistics = \
     ieso_sql.return_sql_table('independent_electrical_system_operator_statistics')
 
-weather_last_download = weather_sql.return_sql_table('last_download')
 
 if not independent_electrical_system_operator_statistics.empty:
     independent_electrical_system_operator_statistics.created_at = \
@@ -51,9 +48,3 @@ else:
     ieso_sql.to_sql(ieso_data.return_five_minute_data().set_index(['datetime']), 'five_minute')
     ieso_sql.to_sql(ieso_data.return_projected_data().set_index(['datetime']), 'projected_' + str(ieso_data.return_created_at().timestamp()))
     print('new database')
-if not weather_last_download.empty:
-#    weather_last_download.last_download = \
-#        pd.to_datetime(weather_last_download.last_download)
-#        if not ( weather_last_download.last_download ==  ):
-
-    print(weather_last_download)
